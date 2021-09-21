@@ -1,9 +1,12 @@
-﻿using BookStoreAPI.Data;
+﻿using AutoMapper;
+using BookStoreAPI.Data;
+using BookStoreAPI.Data.Mapper;
 using BookStoreAPI.Data.Models;
 using BookStoreAPI.Data.ViewModels.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -24,16 +27,19 @@ namespace BookStoreAPI.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
         public AuthenticationController(UserManager<ApplicationUser> userManager,
                                         RoleManager<IdentityRole> roleManager,
                                         AppDbContext context,
-                                        IConfiguration configuration)
+                                        IConfiguration configuration,
+                                        IMapper mapper)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
             _configuration = configuration;
+            _mapper = mapper;
         }
 
         [HttpPost("register-user")]
@@ -111,9 +117,9 @@ namespace BookStoreAPI.Controllers
             {
                 authClaims.Add(new Claim(ClaimTypes.Role, userRole));
             }
-            Console.WriteLine("here 2");
+
             var authSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["JWT:Secret"]));
-            Console.WriteLine(_configuration["JWT:Secret"]);
+
             var token = new JwtSecurityToken(
              expires: DateTime.UtcNow.AddMinutes(10), // 5 - 10mins
              claims: authClaims,
@@ -144,12 +150,6 @@ namespace BookStoreAPI.Controllers
             };
 
             return response;
-        }
-
-        [HttpPost]
-        public IActionResult AddRoleToUser()
-        {
-            return Ok();
         }
     }
 }

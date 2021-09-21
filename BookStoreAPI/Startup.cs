@@ -1,4 +1,5 @@
 using BookStoreAPI.Data;
+using BookStoreAPI.Data.Mapper;
 using BookStoreAPI.Data.Models;
 using BookStoreAPI.Data.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -78,6 +79,11 @@ namespace BookStoreAPI
                     //ValidAudience = Configuration["JWT:Audience"]
                 };
             });
+
+            //Auto mapper
+            services.AddControllersWithViews();
+            services.AddAutoMapper
+        (typeof(AutoMapperProfile).Assembly);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

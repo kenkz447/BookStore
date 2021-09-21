@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace BookStoreAPI.Controllers
@@ -18,12 +19,12 @@ namespace BookStoreAPI.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-      //  private AppDbContext _context;
+        //  private AppDbContext _context;
         private BooksService _booksService;
 
         public BooksController(BooksService booksService)
         {
-           // _context = context;
+            // _context = context;
             _booksService = booksService;
         }
 
@@ -31,14 +32,19 @@ namespace BookStoreAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> AddBook([FromBody] BookVM book)
         {
+
             var bookResult = await _booksService.AddBook(book);
             return Ok(bookResult);
         }
 
         [HttpGet]
-        public async  Task<IActionResult> GetBooks()
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetBooks()
         {
-            return Ok( await _booksService.GetBooks());
+            //Console.WriteLine("line 35 here");
+            //  var id = request.Headers.GetValues("Authorization").FirstOrDefault();
+            //  Console.WriteLine(id);
+            return Ok(await _booksService.GetBooks());
         }
 
         [HttpGet]
