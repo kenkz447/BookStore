@@ -2,6 +2,7 @@
 using BookStoreAPI.Data;
 using BookStoreAPI.Data.Mapper;
 using BookStoreAPI.Data.Models;
+using BookStoreAPI.Data.ViewModels;
 using BookStoreAPI.Data.ViewModels.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -151,9 +152,11 @@ namespace BookStoreAPI.Controllers
             return response;
         }
 
-        public async Task<IActionResult> GetInfoFromToken([FromBody] string accessToken)
+        [HttpGet]
+        [Route("get-info")]
+        public async Task<IActionResult> GetInfoFromToken([FromBody] TokenVM accessToken)
         {
-            UserWithToken user = await GetUserFromAccessToken(accessToken);
+            UserWithToken user = await GetUserFromAccessToken(accessToken.AccessToken);
 
             if (user != null)
             {
