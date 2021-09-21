@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BookStoreAPI.Data.Models;
+using BookStoreAPI.Data.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace BookStoreAPI.Data.Mapper
         public AutoMapperProfile()
         {
             CreateMap<ApplicationUser, UserWithToken>();
+            CreateMap<Book, BookVM>();
         }
     }
 }

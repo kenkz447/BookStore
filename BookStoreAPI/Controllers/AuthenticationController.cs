@@ -125,7 +125,6 @@ namespace BookStoreAPI.Controllers
              claims: authClaims,
              signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
              );
-            Console.WriteLine(token.Claims.ToList());
 
             var jwtToken = new JwtSecurityTokenHandler().WriteToken(token);
 
@@ -150,6 +149,57 @@ namespace BookStoreAPI.Controllers
             };
 
             return response;
+        }
+
+        public async Task<IActionResult> GetInfoFromToken([FromBody] string accessToken)
+        {
+            UserWithToken user = await GetUserFromAccessToken(accessToken);
+
+            if (user != null)
+            {
+                return Ok(user);
+            }
+
+            return NotFound();
+        }
+
+        private async Task<UserWithToken> GetUserFromAccessToken(string accessToken)
+        {
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["JWT:Secret"]);
+
+            var tokenValidationParameters =
+                new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false
+                };
+
+            SecurityToken securityToken;
+            var principle = tokenHandler.ValidateToken(accessToken, tokenValidationParameters, out securityToken);
+
+            JwtSecurityToken jwtSecurityToken = securityToken as JwtSecurityToken;
+
+            if (
+                jwtSecurityToken != null &&
+                jwtSecurityToken
+                    .Header
+                    .Alg
+                    .Equals(SecurityAlgorithms.HmacSha256,
+                    StringComparison.InvariantCultureIgnoreCase)
+            )
+            {
+                var userId = principle.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                var user = await _userManager.Users.Where(n => n.Id == userId).FirstOrDefaultAsync();
+                var uwt = _mapper.Map<UserWithToken>(user);
+                uwt.Roles = (List<string>)await _userManager.GetRolesAsync(user);
+                if (uwt != null) return uwt;
+            }
+            return null;
         }
     }
 }

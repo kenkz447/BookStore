@@ -8,6 +8,7 @@ namespace BookStoreAPI.Data.ViewModels
 {
     public class BookVM
     {
+        public int Id { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public bool IsRead { get; set; }

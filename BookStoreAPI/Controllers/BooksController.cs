@@ -21,11 +21,13 @@ namespace BookStoreAPI.Controllers
     {
         //  private AppDbContext _context;
         private BooksService _booksService;
+        private AppDbContext _appDbContext;
 
-        public BooksController(BooksService booksService)
+        public BooksController(BooksService booksService, AppDbContext appDbContext)
         {
             // _context = context;
             _booksService = booksService;
+            _appDbContext = appDbContext;
         }
 
         [Authorize(Roles = UserRoles.Admin)]
@@ -56,6 +58,37 @@ namespace BookStoreAPI.Controllers
             {
                 return NotFound($"Not Found Book with id {id}");
             }
+
+            return Ok(book);
+        }
+
+        [HttpPut]
+        [Route("{id}")]
+        public async Task<IActionResult> UpdateBook(int id, [FromBody] Book book)
+        {
+            if (id != book.Id)
+                return BadRequest();
+
+            if (!_appDbContext.Books.Any(b => b.Id == id))
+                return NotFound($"Not found Book with id {id}");
+
+            //set state for entity
+            _appDbContext.Entry(book).State = EntityState.Modified;
+            await _appDbContext.SaveChangesAsync();
+
+            var bookResult = _appDbContext.Books.Where(n => n.Id == id).Include(s => s.Publisher).FirstOrDefault();
+            return Ok(bookResult);
+        }
+
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<ActionResult<Book>> DeleteBook(int id)
+        {
+            var book = await _appDbContext.Books.FindAsync(id);
+            if (book == null)
+                return NotFound();
+            _appDbContext.Books.Remove(book);
+            await _appDbContext.SaveChangesAsync();
 
             return Ok(book);
         }
