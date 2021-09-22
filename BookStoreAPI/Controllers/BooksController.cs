@@ -41,7 +41,7 @@ namespace BookStoreAPI.Controllers
         }
 
         [HttpGet]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Publisher, User")]
         public IActionResult GetBooks([FromQuery] PaginationFilter filter, string search)
         {
             //var id = Request.Headers.GetValues("Authorization").FirstOrDefault();

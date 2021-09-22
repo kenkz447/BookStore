@@ -92,7 +92,7 @@ namespace BookStoreAPI.Controllers
             }
 
             var userExists = await _userManager.FindByNameAsync(payload.Username);
-            Console.WriteLine(userExists);
+            // Console.WriteLine(userExists);
             if (userExists != null && await _userManager.CheckPasswordAsync(userExists, payload.Password))
             {
                 var tokenValue = await GenerateJwtToken(userExists);
@@ -122,7 +122,7 @@ namespace BookStoreAPI.Controllers
             var authSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["JWT:Secret"]));
 
             var token = new JwtSecurityToken(
-             expires: DateTime.UtcNow.AddMinutes(10), // 5 - 10mins
+             expires: DateTime.UtcNow.AddMinutes(1), // 5 - 10mins
              claims: authClaims,
              signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
              );
@@ -195,14 +195,59 @@ namespace BookStoreAPI.Controllers
                     StringComparison.InvariantCultureIgnoreCase)
             )
             {
-                var userId = principle.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = principle.FindFirst(ClaimTypes.NameIdentifier).Value;
 
                 var user = await _userManager.Users.Where(n => n.Id == userId).FirstOrDefaultAsync();
                 var uwt = _mapper.Map<UserWithToken>(user);
                 uwt.Roles = (List<string>)await _userManager.GetRolesAsync(user);
                 if (uwt != null) return uwt;
             }
+
             return null;
+        }
+
+        [HttpPost("RefreshToken")]
+        public async Task<ActionResult<UserWithToken>> RefreshToken([FromBody] RefreshRequest refreshRequest)
+        {
+            UserWithToken user =
+                await GetUserFromAccessToken(refreshRequest.AccessToken);
+
+            if (
+                user != null &&
+                ValidateRefreshToken(user, refreshRequest.RefreshToken)
+            )
+            {
+                var userExists = await _userManager.FindByNameAsync(user.UserName);
+                if (userExists != null)
+                {
+                    var tokenValue = await GenerateJwtToken(userExists);
+
+                    return Ok(tokenValue);
+                }
+            }
+
+            return null;
+        }
+
+        private bool ValidateRefreshToken(UserWithToken user, string refreshToken)
+        {
+            RefreshToken refreshTokenUser =
+                _context
+                    .RefreshTokens
+                    .Where(rt => rt.Token == refreshToken)
+                    .OrderByDescending(rt => rt.DateExpire)
+                    .FirstOrDefault();
+
+            if (
+                refreshTokenUser != null &&
+                refreshTokenUser.UserId == user.Id &&
+                refreshTokenUser.DateExpire > DateTime.UtcNow
+            )
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

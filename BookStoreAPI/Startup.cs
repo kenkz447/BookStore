@@ -72,6 +72,7 @@ namespace BookStoreAPI
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["JWT:Secret"])),
                     ValidateIssuer = false,
                     ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
                     //ValidateIssuer = true,
                     //ValidIssuer = Configuration["JWT:Issuer"],
 
