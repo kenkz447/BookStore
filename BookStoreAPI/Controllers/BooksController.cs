@@ -42,19 +42,34 @@ namespace BookStoreAPI.Controllers
 
         [HttpGet]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetBooks([FromQuery] PaginationFilter filter)
+        public IActionResult GetBooks([FromQuery] PaginationFilter filter, string search)
         {
-            //Console.WriteLine("line 35 here");
-            //  var id = request.Headers.GetValues("Authorization").FirstOrDefault();
-            //  Console.WriteLine(id);
+            //var id = Request.Headers.GetValues("Authorization").FirstOrDefault();
+            //Console.WriteLine(id);
+
             var validFilter = new PaginationFilter(filter.PageNumber, filter.PageSize);
-            var pagedData = await _appDbContext.Books
-               .Skip((validFilter.PageNumber - 1) * validFilter.PageSize)
-               .Take(validFilter.PageSize)
-               .ToListAsync();
-            var totalRecords = await _appDbContext.Books.CountAsync();
+
+            int totalRecords = 0;
+            List<Book> pagedData = new List<Book>();
+            if (!string.IsNullOrEmpty(search))
+            {
+                totalRecords = _appDbContext.Books.Where(s => s.Title.Contains(search)).Count();
+                pagedData = _appDbContext.Books.Where(s => s.Title.Contains(search))
+                                                         .Skip((validFilter.PageNumber - 1) * validFilter.PageSize)
+                                                         .Take(validFilter.PageSize)
+                                                         .ToList();
+            }
+            else
+            {
+                totalRecords = _appDbContext.Books.Count();
+                pagedData = _appDbContext.Books
+                                         .Skip((validFilter.PageNumber - 1) * validFilter.PageSize)
+                                         .Take(validFilter.PageSize)
+                                         .ToList();
+            }
+
             var pagedReponse = PaginationHelper.CreatePagedReponse(pagedData, validFilter, totalRecords);
-           
+
             return Ok(pagedReponse);
         }
 
