@@ -3,6 +3,7 @@ using BookStoreAPI.Data.Models;
 using BookStoreAPI.Data.Service;
 using BookStoreAPI.Data.ViewModels;
 using BookStoreAPI.Data.ViewModels.Authentication;
+using BookStoreAPI.Pagging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -40,13 +41,21 @@ namespace BookStoreAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetBooks()
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetBooks([FromQuery] PaginationFilter filter)
         {
             //Console.WriteLine("line 35 here");
             //  var id = request.Headers.GetValues("Authorization").FirstOrDefault();
             //  Console.WriteLine(id);
-            return Ok(await _booksService.GetBooks());
+            var validFilter = new PaginationFilter(filter.PageNumber, filter.PageSize);
+            var pagedData = await _appDbContext.Books
+               .Skip((validFilter.PageNumber - 1) * validFilter.PageSize)
+               .Take(validFilter.PageSize)
+               .ToListAsync();
+            var totalRecords = await _appDbContext.Books.CountAsync();
+            var pagedReponse = PaginationHelper.CreatePagedReponse(pagedData, validFilter, totalRecords);
+           
+            return Ok(pagedReponse);
         }
 
         [HttpGet]

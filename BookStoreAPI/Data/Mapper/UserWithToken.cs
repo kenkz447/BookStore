@@ -11,10 +11,6 @@ namespace BookStoreAPI.Data.Mapper
 {
     public class UserWithToken
     {
-        //private readonly UserManager<ApplicationUser> _userManager;
-        //private readonly RoleManager<IdentityRole> _roleManager;
-        //private readonly AppDbContext _context;
-        //private readonly IConfiguration _configuration;
 
         public string Id { get; set; }
         public string UserName { get; set; }
