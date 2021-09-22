@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace BookStoreAPI.Data.Models
 {
-    public partial class Book
+    public class Book
     {
         public int Id { get; set; }
 

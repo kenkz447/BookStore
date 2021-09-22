@@ -122,7 +122,7 @@ namespace BookStoreAPI.Controllers
             var authSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["JWT:Secret"]));
 
             var token = new JwtSecurityToken(
-             expires: DateTime.UtcNow.AddMinutes(1), // 5 - 10mins
+             expires: DateTime.UtcNow.AddMinutes(60), // 5 - 10mins
              claims: authClaims,
              signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
              );

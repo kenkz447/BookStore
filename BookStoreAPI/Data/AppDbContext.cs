@@ -29,9 +29,9 @@ namespace BookStoreAPI.Data
                 .HasForeignKey(bi => bi.AuthorId);
             base.OnModelCreating(modelBuilder);
         }
-        public virtual DbSet<Book> Books { get; set; }
+        public DbSet<Book> Books { get; set; }
         public DbSet<Author> Authors { get; set; }
-        public virtual DbSet<Publisher> Publishers { get; set; }
+        public DbSet<Publisher> Publishers { get; set; }
         public DbSet<Book_Author> Book_Authors { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
