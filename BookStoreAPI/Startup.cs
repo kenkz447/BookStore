@@ -31,11 +31,10 @@ namespace BookStoreAPI
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers().AddNewtonsoftJson(options =>
-            options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
             services.AddDbContext<AppDbContext>(options =>
             {
@@ -45,49 +44,37 @@ namespace BookStoreAPI
                     mySqlOptions => mySqlOptions.ServerVersion(new Version(8, 0, 18), ServerType.MySql));
             });
 
-            //Add Service
-            services.AddTransient<BooksService>();
-            services.AddTransient<PublishersService>();
-            services.AddTransient<AuthorsService>();
+            services.AddScope<BooksService>();
+            services.AddScope<PublishersService>();
+            services.AddScope<AuthorsService>();
 
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
 
-            //Add Authentication
             services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            //Add JWT Bearer
-            .AddJwtBearer(options =>
-            {
-                options.SaveToken = true;
-                options.RequireHttpsMetadata = false;
-                options.TokenValidationParameters = new TokenValidationParameters()
                 {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["JWT:Secret"])),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ClockSkew = TimeSpan.Zero
-                    //ValidateIssuer = true,
-                    //ValidIssuer = Configuration["JWT:Issuer"],
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.SaveToken = true;
+                    options.RequireHttpsMetadata = false;
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["JWT:Secret"])),
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
 
-                    //ValidateAudience = true,
-                    //ValidAudience = Configuration["JWT:Audience"]
-                };
-            });
-
-            //Auto mapper
-            services.AddControllersWithViews();
-            services.AddAutoMapper
-        (typeof(AutoMapperProfile).Assembly);
+            services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
@@ -108,48 +95,41 @@ namespace BookStoreAPI
                 endpoints.MapControllers();
             });
 
-            //   var serviceProvider = app.ApplicationServices.GetService<IServiceProvider>(); 
-            //  CreateRoles(serviceProviderr).Wait();
             CreateRoles(serviceProvider).Wait();
         }
 
         private async Task CreateRoles(IServiceProvider serviceProvider)
         {
-            //adding customs roles : Question 1
-            var RoleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var UserManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             string roleName = "Admin";
-            IdentityResult roleResult;
-
-            //     foreach (var roleName in roleNames)
-            //      {
-            var roleExist = await RoleManager.RoleExistsAsync(roleName);
+            
+            var roleExist = await roleManager.RoleExistsAsync(roleName);
             if (!roleExist)
             {
-                //create the roles and seed them to the database: Question 2
-                roleResult = await RoleManager.CreateAsync(new IdentityRole(roleName));
+                var adminRole = new IdentityRole(roleName);
+                await roleManager.CreateAsync(adminRole);
             }
-            //      }
 
-            //Here you could create a super user who will maintain the web app
+
+            var userPWD = Configuration["AppSettings:UserPassword"];
+            var userName = Configuration["AppSettings:UserName"];
+            
             var poweruser = new ApplicationUser
             {
-                UserName = Configuration["AppSettings:UserName"],
+                UserName = userName,
             };
-
-            string userPWD = Configuration["AppSettings:UserPassword"];
-            var _user = await UserManager.FindByNameAsync(Configuration["AppSettings:UserName"]);
+            
+            var _user = await userManager.FindByNameAsync(userName);
 
             if (_user == null)
             {
-                var createPowerUser = await UserManager.CreateAsync(poweruser, userPWD);
+                var createPowerUser = await userManager.CreateAsync(poweruser, userPWD);
                 if (createPowerUser.Succeeded)
                 {
-                    //here we tie the new user to the role : Question 3
-                    await UserManager.AddToRoleAsync(poweruser, "Admin");
+                    await userManager.AddToRoleAsync(poweruser, roleName);
                 }
             }
-            //return Ok();
         }
     }
 }
